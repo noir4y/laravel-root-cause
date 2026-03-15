@@ -1,5 +1,5 @@
 {
-    "name": "noir/laravel-root-cause",
+    "name": "noir4y/laravel-root-cause",
     "description": "Deterministic root-cause diagnostics for Laravel applications.",
     "type": "library",
     "license": "MIT",
