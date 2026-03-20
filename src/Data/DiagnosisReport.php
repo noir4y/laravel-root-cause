@@ -39,7 +39,7 @@ class DiagnosisReport
             'candidate_fixes' => array_values($this->candidateFixes),
             'repro' => $this->repro,
             'token_budget_hint' => $this->tokenBudgetHint,
-            'metadata' => $this->metadata,
+            'metadata' => $this->metadata === [] ? (object) [] : ValueNormalizer::assoc($this->metadata),
         ];
     }
 

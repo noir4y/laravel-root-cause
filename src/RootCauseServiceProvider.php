@@ -14,6 +14,7 @@ use LaravelRootCause\Collectors\RequestCollector;
 use LaravelRootCause\Commands\ExportTraceCommand;
 use LaravelRootCause\Commands\FailedRequestCommand;
 use LaravelRootCause\Commands\InstallCommand;
+use LaravelRootCause\Commands\PruneTracesCommand;
 use LaravelRootCause\Commands\QueryPathologyCommand;
 use LaravelRootCause\Commands\TraceCommand;
 use LaravelRootCause\Contracts\TraceRepository;
@@ -36,7 +37,7 @@ class RootCauseServiceProvider extends ServiceProvider
         $this->app->singleton(Redactor::class, fn (Application $app): Redactor => new Redactor(
             ValueNormalizer::assoc($app->make(ConfigRepository::class)->get('root_cause.redact', []))
         ));
-        $this->app->singleton(RootCauseContext::class);
+        $this->app->scoped(RootCauseContext::class);
         $this->app->singleton(ConfidenceScorer::class);
         $this->app->singleton(CandidateFixGenerator::class);
         $this->app->singleton(RuleEngine::class);
@@ -49,12 +50,13 @@ class RootCauseServiceProvider extends ServiceProvider
                 ValueNormalizer::string($config->get('root_cause.storage.path'), storage_path('app/root-cause'))
             );
         });
-        $this->app->singleton(RootCause::class);
-        $this->app->singleton(QueryCollector::class);
+        $this->app->scoped(RootCause::class);
+        $this->app->scoped(QueryCollector::class);
         $this->app->singleton(TraceFinder::class);
 
         $this->commands([
             InstallCommand::class,
+            PruneTracesCommand::class,
             TraceCommand::class,
             FailedRequestCommand::class,
             QueryPathologyCommand::class,

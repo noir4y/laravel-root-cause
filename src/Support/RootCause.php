@@ -72,6 +72,10 @@ class RootCause
             ],
         );
 
+        if (! $this->isEnabled()) {
+            return $trace;
+        }
+
         $this->activeTraces[$traceId] = $trace;
         $this->context->begin($traceId, [
             'request_url' => $trace->context['request_url'],
@@ -83,6 +87,10 @@ class RootCause
 
     public function currentTrace(): ?TraceEnvelope
     {
+        if (! $this->isEnabled()) {
+            return null;
+        }
+
         $traceId = $this->context->traceId();
 
         return $traceId ? ($this->activeTraces[$traceId] ?? null) : null;
@@ -90,6 +98,10 @@ class RootCause
 
     public function recordSignal(Signal $signal): void
     {
+        if (! $this->isEnabled()) {
+            return;
+        }
+
         $trace = $this->currentTrace();
 
         if (! $trace) {
@@ -101,6 +113,10 @@ class RootCause
 
     public function recordValidationException(Throwable $throwable, Request $request): void
     {
+        if (! $this->isEnabled()) {
+            return;
+        }
+
         $trace = $this->currentTrace();
 
         if (! $trace || $this->hasSignalType($trace, 'validation_failed')) {
@@ -113,6 +129,10 @@ class RootCause
 
     public function recordValidationResponse(Response $response, Request $request): void
     {
+        if (! $this->isEnabled()) {
+            return;
+        }
+
         $trace = $this->currentTrace();
 
         if (! $trace || $this->hasSignalType($trace, 'validation_failed')) {
@@ -131,6 +151,10 @@ class RootCause
 
     public function recordException(Throwable $throwable): void
     {
+        if (! $this->isEnabled()) {
+            return;
+        }
+
         $trace = $this->currentTrace();
 
         if (! $trace || $this->hasRecordedException($trace, $throwable)) {
@@ -146,6 +170,12 @@ class RootCause
 
     public function finishRequest(?Response $response = null, ?Throwable $throwable = null, ?Request $request = null): ?TraceEnvelope
     {
+        if (! $this->isEnabled()) {
+            $this->context->clear();
+
+            return null;
+        }
+
         $trace = $this->currentTrace();
 
         if (! $trace) {
@@ -167,6 +197,11 @@ class RootCause
         $this->context->clear();
 
         return $trace;
+    }
+
+    protected function isEnabled(): bool
+    {
+        return RootCauseToggle::enabled();
     }
 
     /**
