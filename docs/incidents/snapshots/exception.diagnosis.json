@@ -1,0 +1,40 @@
+{
+  "summary": "An Unhandled RuntimeException returned a 500 error",
+  "root_cause_category": "unhandled_exception",
+  "confidence": 0.62,
+  "supporting_evidence": [
+    {
+      "type": "exception",
+      "class": "RuntimeException",
+      "message": "Boom from route"
+    },
+    {
+      "type": "stack_frame",
+      "file": "/app/Http/Controllers/BoomController.php",
+      "line": 18,
+      "class": "App\\Http\\Controllers\\BoomController",
+      "function": "__invoke"
+    },
+    {
+      "type": "query_summary",
+      "fingerprint": "select * from \"users\" where \"id\" = ?",
+      "count": 3,
+      "duration_ms": 6.4
+    }
+  ],
+  "affected_files": [
+    "/app/Http/Controllers/BoomController.php"
+  ],
+  "candidate_fixes": [
+    "Inspect the first application frame and add a focused regression test for RuntimeException.",
+    "Reproduce the failure with the exported payload keys and route metadata before changing behavior.",
+    "Start from /app/Http/Controllers/BoomController.php:18 to confirm the thrown branch is intended."
+  ],
+  "repro": {
+    "method": "GET",
+    "uri": "/explode",
+    "exception_class": "RuntimeException"
+  },
+  "token_budget_hint": "small",
+  "metadata": {}
+}

@@ -3,6 +3,24 @@
     "description": "Deterministic root-cause diagnostics for Laravel applications.",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "laravel",
+        "php",
+        "root-cause-analysis",
+        "diagnostics",
+        "debugging",
+        "observability",
+        "exception-handling",
+        "developer-tools",
+        "ai",
+        "json"
+    ],
+    "homepage": "https://github.com/noir4y/laravel-root-cause",
+    "support": {
+        "docs": "https://github.com/noir4y/laravel-root-cause/tree/main/docs",
+        "issues": "https://github.com/noir4y/laravel-root-cause/issues",
+        "source": "https://github.com/noir4y/laravel-root-cause"
+    },
     "require": {
         "php": "^8.2",
         "illuminate/console": "^11.0|^12.0",

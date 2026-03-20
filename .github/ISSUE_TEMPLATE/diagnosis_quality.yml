@@ -1,0 +1,47 @@
+name: Diagnosis quality
+description: Report a false positive, false negative, or weak remediation suggestion.
+title: "[Diagnosis]: "
+labels:
+  - diagnosis-quality
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when the package collects the right signals but the diagnosis, confidence, or suggested fixes are wrong.
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Diagnosis issue
+      options:
+        - False positive
+        - False negative
+        - Weak candidate fix
+        - Confidence score feels off
+    validations:
+      required: true
+  - type: input
+    id: category
+    attributes:
+      label: Reported category
+      placeholder: validation_contract_mismatch
+  - type: textarea
+    id: incident
+    attributes:
+      label: Sanitized incident summary
+      description: Describe the actual failure and why the diagnosis was wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Exported trace or diagnosis snapshot
+      description: Paste the relevant `diagnosis` block or link a sanitized JSON artifact.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected diagnosis
+      description: What category or fix should have been suggested instead?
+    validations:
+      required: true

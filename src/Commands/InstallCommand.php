@@ -30,11 +30,14 @@ class InstallCommand extends Command
         ]);
 
         $path = ValueNormalizer::string(config('root_cause.storage.path'), storage_path('app/root-cause'));
+        $retentionDays = ValueNormalizer::int(config('root_cause.storage.retention_days', 7), 7);
         $this->files->ensureDirectoryExists($path);
 
         $this->components->info(sprintf('Root Cause storage ready: %s', $path));
         $this->components->twoColumnDetail('Middleware', 'auto-registered on web/api groups');
         $this->components->twoColumnDetail('Output', 'CLI + JSON export');
+        $this->components->twoColumnDetail('Runtime toggle', 'ROOT_CAUSE_ENABLED (local default only)');
+        $this->components->twoColumnDetail('Retention', sprintf('%d day default via ROOT_CAUSE_RETENTION_DAYS', $retentionDays));
 
         return self::SUCCESS;
     }

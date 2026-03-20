@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">root_cause JSON export</title>
+  <desc id="desc">A JSON export style card showing machine-readable diagnosis data.</desc>
+  <rect width="1200" height="720" rx="28" fill="#f8fafc"/>
+  <rect x="36" y="36" width="1128" height="648" rx="22" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="60" y="58" width="220" height="42" rx="12" fill="#0f172a"/>
+  <text x="78" y="86" fill="#e2e8f0" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20" font-weight="700">root_cause export.json</text>
+  <text x="60" y="150" fill="#0f172a" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="24" font-weight="700">{</text>
+  <text x="92" y="196" fill="#1d4ed8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">"root_cause_category": "validation_contract_mismatch",</text>
+  <text x="92" y="236" fill="#0f172a" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">"confidence": 0.76,</text>
+  <text x="92" y="276" fill="#0f172a" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">"candidate_fixes": [</text>
+  <text x="124" y="316" fill="#16a34a" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">"Include the required field \"email\".",</text>
+  <text x="124" y="356" fill="#16a34a" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">"Review StoreUserRequest..."</text>
+  <text x="92" y="396" fill="#0f172a" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">],</text>
+  <text x="92" y="436" fill="#0f172a" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="22">"token_budget_hint": "small"</text>
+  <text x="60" y="482" fill="#0f172a" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="24" font-weight="700">}</text>
+  <text x="60" y="612" fill="#475569" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="24">Structured output for downstream tooling and AI agents.</text>
+</svg>

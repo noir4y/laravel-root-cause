@@ -1,0 +1,77 @@
+{
+  "trace_id": "trc_validation_failure",
+  "kind": "http_request",
+  "started_at": "2026-03-20T12:00:01+09:00",
+  "ended_at": "2026-03-20T12:00:02+09:00",
+  "environment": "testing",
+  "app": {
+    "php_version": "8.3.0",
+    "laravel_version": "12.x"
+  },
+  "entrypoint": {
+    "method": "POST",
+    "uri": "/users",
+    "route_name": "users.store",
+    "controller": "App\\Http\\Controllers\\UserController@store"
+  },
+  "context": {
+    "request_url": "http://localhost/users",
+    "input_keys": [
+      "name"
+    ],
+    "input_shape": {
+      "name": "string"
+    },
+    "query_keys": [],
+    "header_keys": [
+      "accept"
+    ]
+  },
+  "response": {
+    "status_code": 422
+  },
+  "signals": [
+    {
+      "type": "validation_failed",
+      "captured_at": "2026-03-20T12:00:01+09:00",
+      "payload": {
+        "form_request": "App\\Http\\Requests\\StoreUserRequest",
+        "failed_fields": {
+          "email": [
+            "required"
+          ]
+        },
+        "input_keys": [
+          "name"
+        ],
+        "input_shape": {
+          "name": "string"
+        },
+        "route": {
+          "name": "users.store",
+          "controller": "App\\Http\\Controllers\\UserController@store"
+        }
+      },
+      "evidence": [
+        {
+          "type": "validation_rule",
+          "source": "App\\Http\\Requests\\StoreUserRequest",
+          "field": "email",
+          "rule": "required",
+          "message": "The email field is required."
+        },
+        {
+          "type": "input_keys",
+          "keys": [
+            "name"
+          ]
+        },
+        {
+          "type": "route",
+          "route_name": "users.store",
+          "controller": "App\\Http\\Controllers\\UserController@store"
+        }
+      ]
+    }
+  ]
+}

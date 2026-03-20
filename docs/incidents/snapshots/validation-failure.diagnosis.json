@@ -1,0 +1,40 @@
+{
+  "summary": "Error 422 occurred due to mismatch between StoreUserRequest and payload",
+  "root_cause_category": "validation_contract_mismatch",
+  "confidence": 0.76,
+  "supporting_evidence": [
+    {
+      "type": "validation_rule",
+      "source": "App\\Http\\Requests\\StoreUserRequest",
+      "field": "email",
+      "rule": "required",
+      "message": "The email field is required."
+    },
+    {
+      "type": "input_keys",
+      "keys": [
+        "name"
+      ]
+    },
+    {
+      "type": "route",
+      "route_name": "users.store",
+      "controller": "App\\Http\\Controllers\\UserController@store"
+    }
+  ],
+  "affected_files": [],
+  "candidate_fixes": [
+    "Include the required field \"email\" in the request payload or make the rule nullable.",
+    "Review StoreUserRequest to confirm the expected payload keys still match the frontend contract."
+  ],
+  "repro": {
+    "method": "POST",
+    "uri": "/users",
+    "route_name": "users.store",
+    "payload_keys": [
+      "name"
+    ]
+  },
+  "token_budget_hint": "small",
+  "metadata": {}
+}

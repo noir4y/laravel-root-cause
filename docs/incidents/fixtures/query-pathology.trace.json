@@ -1,0 +1,204 @@
+{
+  "trace_id": "trc_query_burst",
+  "kind": "http_request",
+  "started_at": "2026-03-20T12:20:01+09:00",
+  "ended_at": "2026-03-20T12:20:02+09:00",
+  "environment": "testing",
+  "app": {
+    "php_version": "8.3.0",
+    "laravel_version": "12.x"
+  },
+  "entrypoint": {
+    "method": "GET",
+    "uri": "/invoices",
+    "route_name": "invoices.index"
+  },
+  "context": {
+    "request_url": "http://localhost/invoices",
+    "input_keys": [],
+    "input_shape": {},
+    "query_keys": [],
+    "header_keys": [
+      "accept"
+    ]
+  },
+  "response": {
+    "status_code": 200
+  },
+  "signals": [
+    {
+      "type": "query_executed",
+      "captured_at": "2026-03-20T12:20:01+09:00",
+      "payload": {
+        "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+        "table_candidates": [
+          "invoices"
+        ],
+        "bindings_count": 1,
+        "duration_ms": 1.21,
+        "connection": "testing",
+        "caller_frame": {
+          "file": "/app/Http/Controllers/InvoiceController.php",
+          "line": 44,
+          "class": "App\\Http\\Controllers\\InvoiceController",
+          "function": "index"
+        }
+      },
+      "evidence": [
+        {
+          "type": "query_fingerprint",
+          "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+          "tables": [
+            "invoices"
+          ],
+          "duration_ms": 1.21
+        }
+      ]
+    },
+    {
+      "type": "query_executed",
+      "captured_at": "2026-03-20T12:20:01+09:00",
+      "payload": {
+        "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+        "table_candidates": [
+          "invoices"
+        ],
+        "bindings_count": 1,
+        "duration_ms": 1.18,
+        "connection": "testing",
+        "caller_frame": {
+          "file": "/app/Http/Controllers/InvoiceController.php",
+          "line": 44,
+          "class": "App\\Http\\Controllers\\InvoiceController",
+          "function": "index"
+        }
+      },
+      "evidence": [
+        {
+          "type": "query_fingerprint",
+          "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+          "tables": [
+            "invoices"
+          ],
+          "duration_ms": 1.18
+        }
+      ]
+    },
+    {
+      "type": "query_executed",
+      "captured_at": "2026-03-20T12:20:01+09:00",
+      "payload": {
+        "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+        "table_candidates": [
+          "invoices"
+        ],
+        "bindings_count": 1,
+        "duration_ms": 1.17,
+        "connection": "testing",
+        "caller_frame": {
+          "file": "/app/Http/Controllers/InvoiceController.php",
+          "line": 44,
+          "class": "App\\Http\\Controllers\\InvoiceController",
+          "function": "index"
+        }
+      },
+      "evidence": [
+        {
+          "type": "query_fingerprint",
+          "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+          "tables": [
+            "invoices"
+          ],
+          "duration_ms": 1.17
+        }
+      ]
+    },
+    {
+      "type": "query_executed",
+      "captured_at": "2026-03-20T12:20:01+09:00",
+      "payload": {
+        "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+        "table_candidates": [
+          "invoices"
+        ],
+        "bindings_count": 1,
+        "duration_ms": 1.16,
+        "connection": "testing",
+        "caller_frame": {
+          "file": "/app/Http/Controllers/InvoiceController.php",
+          "line": 44,
+          "class": "App\\Http\\Controllers\\InvoiceController",
+          "function": "index"
+        }
+      },
+      "evidence": [
+        {
+          "type": "query_fingerprint",
+          "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+          "tables": [
+            "invoices"
+          ],
+          "duration_ms": 1.16
+        }
+      ]
+    },
+    {
+      "type": "query_executed",
+      "captured_at": "2026-03-20T12:20:01+09:00",
+      "payload": {
+        "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+        "table_candidates": [
+          "invoices"
+        ],
+        "bindings_count": 1,
+        "duration_ms": 1.15,
+        "connection": "testing",
+        "caller_frame": {
+          "file": "/app/Http/Controllers/InvoiceController.php",
+          "line": 44,
+          "class": "App\\Http\\Controllers\\InvoiceController",
+          "function": "index"
+        }
+      },
+      "evidence": [
+        {
+          "type": "query_fingerprint",
+          "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+          "tables": [
+            "invoices"
+          ],
+          "duration_ms": 1.15
+        }
+      ]
+    },
+    {
+      "type": "query_pathology_suspected",
+      "captured_at": "2026-03-20T12:20:02+09:00",
+      "payload": {
+        "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+        "count": 5,
+        "total_duration_ms": 5.87,
+        "table_candidates": [
+          "invoices"
+        ],
+        "connection": "testing",
+        "worst_offender_frame": {
+          "file": "/app/Http/Controllers/InvoiceController.php",
+          "line": 44,
+          "class": "App\\Http\\Controllers\\InvoiceController",
+          "function": "index"
+        },
+        "classification": "duplicate_query_burst"
+      },
+      "evidence": [
+        {
+          "type": "query_pathology",
+          "classification": "duplicate_query_burst",
+          "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+          "count": 5,
+          "duration_ms": 5.87
+        }
+      ]
+    }
+  ]
+}

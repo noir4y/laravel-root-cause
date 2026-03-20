@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -eu
+
+if [ ! -d vendor ]; then
+    echo "Skipping package checks because vendor/ is missing. Run composer install first."
+    exit 0
+fi
+
+composer lint
+composer analyse
+composer test

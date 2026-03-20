@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a package bug or regression in Root Cause.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when Root Cause behaves incorrectly, misclassifies a request, or breaks package integration.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: PHP, Laravel, package version, and driver.
+      placeholder: PHP 8.3, Laravel 12.2, laravel-root-cause v0.2.0, file driver
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Include the observed request, command output, or exported JSON.
+      placeholder: Describe the symptom and include the relevant output.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Exact steps to reproduce the bug.
+      placeholder: |
+        1. Install the package
+        2. Hit the failing route
+        3. Run php artisan root-cause:trace latest
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Sanitized artifacts
+      description: Attach screenshots or JSON exports with secrets removed.

@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest a new diagnosis rule, collector, exporter, or docs improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: input
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      placeholder: I need deterministic diagnosis for queued jobs.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the capability you want and how it would be used.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Telescope, Ray, logs, or custom tooling you evaluated.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What would make this feature complete enough to adopt?
