@@ -1,2 +1,11 @@
 /vendor
 /.phpunit.result.cache
+!/.githooks/
+!/.githooks/pre-commit
+/examples/laravel12-demo/.env
+/examples/laravel12-demo/database/database.sqlite
+/examples/laravel12-demo/bootstrap/cache/*
+!/examples/laravel12-demo/bootstrap/cache/.gitignore
+/examples/laravel12-demo/storage/*.key
+/examples/laravel12-demo/storage/app/root-cause*
+/examples/laravel12-demo/vendor

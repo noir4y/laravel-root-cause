@@ -1,0 +1,24 @@
+{
+    "rules": [
+        {
+            "category": "validation_contract_mismatch",
+            "signals": ["validation_failed"],
+            "description": "Validation failed and the sanitized payload keys do not satisfy the expected Laravel contract."
+        },
+        {
+            "category": "missing_route_binding",
+            "signals": ["exception_thrown"],
+            "description": "Route model binding or a related 404 path failed before the request completed."
+        },
+        {
+            "category": "n_plus_one_suspected",
+            "signals": ["query_executed", "query_pathology_suspected"],
+            "description": "Repeated query fingerprints point to relation-driven N+1 behavior."
+        },
+        {
+            "category": "duplicate_query_burst",
+            "signals": ["query_executed", "query_pathology_suspected"],
+            "description": "The same query fingerprint repeats beyond a deterministic threshold in one trace."
+        }
+    ]
+}

@@ -1,0 +1,101 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'codex/**'
+  pull_request:
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php: '8.2'
+            laravel: '11'
+            laravel_label: '11'
+            testbench: '9'
+            lockfile: '.github/locks/composer.laravel11.lock'
+          - php: '8.3'
+            laravel: '11'
+            laravel_label: '11'
+            testbench: '9'
+            lockfile: '.github/locks/composer.laravel11.lock'
+          - php: '8.2'
+            laravel: '12'
+            laravel_label: '12'
+            testbench: '10'
+            lockfile: '.github/locks/composer.laravel12.lock'
+          - php: '8.3'
+            laravel: '12'
+            laravel_label: '12'
+            testbench: '10'
+            lockfile: '.github/locks/composer.laravel12.lock'
+
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel_label }} / Testbench ${{ matrix.testbench }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          extensions: mbstring, sqlite, pdo_sqlite
+          tools: composer:v2
+
+      - name: Select lockfile
+        run: cp "${{ matrix.lockfile }}" composer.lock
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Pint
+        run: composer lint
+
+      - name: PHPStan
+        run: composer analyse
+
+      - name: PHPUnit
+        run: composer test
+
+  demo-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: mbstring, sqlite, pdo_sqlite
+          tools: composer:v2
+
+      - name: Demo app smoke
+        working-directory: examples/laravel12-demo
+        run: |
+          composer install --no-interaction --prefer-dist
+          cp .env.example .env
+          touch database/database.sqlite
+          php artisan key:generate --force
+          php artisan migrate --seed --force
+          php artisan serve --host=127.0.0.1 --port=8000 >/tmp/root-cause-demo.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8000/ >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              cat /tmp/root-cause-demo.log
+              exit 1
+            fi
+            sleep 1
+          done
+          test "$(curl --silent --output /tmp/root-cause-validation.json --write-out '%{http_code}' http://127.0.0.1:8000/api/demo/validation-failure)" = "422"
+          php artisan root-cause:failed-request >/tmp/root-cause-failed-request.txt
+          grep -F 'Root cause: validation_contract_mismatch' /tmp/root-cause-failed-request.txt
