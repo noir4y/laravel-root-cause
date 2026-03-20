@@ -29,7 +29,7 @@ class StackFrameResolver
 
         if ($frames === [] && $throwable->getFile() && $this->isApplicationFrame($throwable->getFile())) {
             $frames[] = [
-                'file' => $throwable->getFile(),
+                'file' => $this->normalizePath($throwable->getFile()),
                 'line' => $throwable->getLine(),
                 'class' => null,
                 'function' => null,
@@ -65,7 +65,7 @@ class StackFrameResolver
     protected function normalizeFrame(array $frame): array
     {
         return [
-            'file' => ValueNormalizer::string($frame['file'] ?? null),
+            'file' => $this->normalizePath(ValueNormalizer::string($frame['file'] ?? null)),
             'line' => ValueNormalizer::int($frame['line'] ?? null),
             'class' => ValueNormalizer::nullableString($frame['class'] ?? null),
             'function' => ValueNormalizer::nullableString($frame['function'] ?? null),
@@ -74,12 +74,38 @@ class StackFrameResolver
 
     protected function isApplicationFrame(string $file): bool
     {
-        $basePath = function_exists('base_path') ? base_path() : getcwd();
+        $basePath = $this->basePath();
 
         if (! str_starts_with($file, (string) $basePath)) {
             return false;
         }
 
         return ! str_contains($file, DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR);
+    }
+
+    protected function normalizePath(string $file): string
+    {
+        $basePath = rtrim($this->basePath(), DIRECTORY_SEPARATOR);
+
+        if ($basePath !== '' && str_starts_with($file, $basePath)) {
+            $relative = substr($file, strlen($basePath));
+
+            return '/'.ltrim(str_replace(DIRECTORY_SEPARATOR, '/', $relative), '/');
+        }
+
+        return str_replace(DIRECTORY_SEPARATOR, '/', $file);
+    }
+
+    protected function basePath(): string
+    {
+        if (function_exists('base_path')) {
+            try {
+                return (string) base_path();
+            } catch (Throwable) {
+                // Fall back to the process cwd when the global helper exists but no app is booted.
+            }
+        }
+
+        return (string) getcwd();
     }
 }

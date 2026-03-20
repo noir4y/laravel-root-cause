@@ -22,7 +22,7 @@ class CliTraceFormatterTest extends TestCase
             entrypoint: ['method' => 'POST', 'uri' => '/users'],
             context: ['request_url' => 'http://localhost/users'],
             diagnosis: new DiagnosisReport(
-                summary: 'StoreUserRequest と payload の不一致で 422 が発生',
+                summary: 'Error 422 occurred due to mismatch between StoreUserRequest and payload',
                 rootCauseCategory: 'validation_contract_mismatch',
                 confidence: 0.76,
                 supportingEvidence: [

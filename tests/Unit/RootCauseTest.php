@@ -70,7 +70,7 @@ class RootCauseTest extends PackageTestCase
                 return true;
             }))
             ->willReturn(new DiagnosisReport(
-                summary: '同一 query fingerprint の反復から N+1 が疑われます',
+                summary: 'N+1 is suspected based on the repetition of the same query fingerprint.',
                 rootCauseCategory: 'n_plus_one_suspected',
                 confidence: 0.81,
             ));
@@ -161,7 +161,7 @@ class RootCauseTest extends PackageTestCase
                 return true;
             }))
             ->willReturn(new DiagnosisReport(
-                summary: '同一 query fingerprint の反復から N+1 が疑われます',
+                summary: 'N+1 is suspected based on the repetition of the same query fingerprint.',
                 rootCauseCategory: 'n_plus_one_suspected',
                 confidence: 0.81,
             ));

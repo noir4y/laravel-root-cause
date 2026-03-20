@@ -59,9 +59,9 @@ class RuleEngine
 
         return new DiagnosisReport(
             summary: sprintf(
-                '%s と payload の不一致で %d が発生',
-                $formRequest ? class_basename($formRequest) : 'Validation contract',
-                $statusCode
+                'Error %d occurred due to a mismatch between %s and payload.',
+                $statusCode,
+                $formRequest ? class_basename($formRequest) : 'Validation contract'
             ),
             rootCauseCategory: 'validation_contract_mismatch',
             confidence: $this->confidenceScorer->validationContractMismatch($failedFields, $formRequest, $inputKeys),
@@ -108,7 +108,7 @@ class RuleEngine
         }
 
         return new DiagnosisReport(
-            summary: 'Route model binding または 404 解決経路が失敗しました',
+            summary: 'Route model binding or 404 route resolution failed',
             rootCauseCategory: 'missing_route_binding',
             confidence: $this->confidenceScorer->missingRouteBinding(
                 $model,
@@ -148,8 +148,8 @@ class RuleEngine
 
         return new DiagnosisReport(
             summary: $classification === 'n_plus_one_suspected'
-                ? '同一 query fingerprint の反復から N+1 が疑われます'
-                : '同一 query fingerprint が短時間で反復しています',
+                ? 'N+1 is suspected due to the repetition of the same query fingerprint.'
+                : 'The same query fingerprint is being repeated in a short period of time.',
             rootCauseCategory: $classification,
             confidence: $this->confidenceScorer->queryPathology(
                 $classification,
@@ -189,7 +189,7 @@ class RuleEngine
 
         return new DiagnosisReport(
             summary: sprintf(
-                'Unhandled %s が %d を返しました',
+                'An Unhandled %s returned a %d error.',
                 class_basename($exceptionClass),
                 $statusCode
             ),

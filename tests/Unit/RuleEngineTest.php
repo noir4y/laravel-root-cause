@@ -264,7 +264,7 @@ class RuleEngineTest extends TestCase
 
         $this->assertNotNull($diagnosis);
         $this->assertSame('missing_route_binding', $diagnosis->rootCauseCategory);
-        $this->assertContains(__FILE__, $diagnosis->affectedFiles);
+        $this->assertContains('RuleEngineTest.php', array_map('basename', $diagnosis->affectedFiles));
     }
 
     public function test_it_does_not_blame_route_binding_for_manual_model_lookups_inside_the_action(): void

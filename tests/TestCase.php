@@ -31,6 +31,7 @@ abstract class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix' => '',
         ]);
+        $config->set('root_cause.enabled', true);
         $config->set('root_cause.storage.path', sys_get_temp_dir().'/laravel-root-cause-tests/'.uniqid('', true));
         $config->set('root_cause.collectors.query.duplicate_threshold', 3);
         $config->set('root_cause.collectors.query.n_plus_one_threshold', 3);
@@ -62,6 +63,51 @@ abstract class TestCase extends Orchestra
                 ],
             ], 422);
         })->middleware(RequestCollector::class)->name('validation.response');
+
+        $router->post('/response-validation-translated', function () {
+            return response()->json([
+                'message' => 'The submitted data is invalid.',
+                'errors' => [
+                    'email' => ['The email field must be a valid email address.'],
+                ],
+            ], 422);
+        })->middleware(RequestCollector::class)->name('validation.response.translated');
+
+        $router->post('/response-validation-framework-diff', function (Request $request) {
+            return response()->json([
+                'message' => 'The team rejected this payload.',
+                'errors' => [
+                    'email' => ['The email field must be a valid email address.'],
+                ],
+                'meta' => [
+                    'framework_version' => '12.x',
+                    'submitted' => $request->all(),
+                ],
+            ], 422);
+        })->middleware(RequestCollector::class)->name('validation.response.framework-diff');
+
+        $router->post('/response-validation-custom-renderer', function (Request $request) {
+            return response()->json([
+                'error' => [
+                    'title' => 'Validation failed',
+                    'detail' => 'Custom renderer wrapped the error payload.',
+                ],
+                'message' => 'Request could not be processed.',
+                'errors' => [
+                    'email' => ['The email field must be a valid email address.'],
+                ],
+                'input' => $request->all(),
+            ], 422);
+        })->middleware(RequestCollector::class)->name('validation.response.custom-renderer');
+
+        $router->post('/response-validation-custom-message', function () {
+            return response()->json([
+                'message' => 'Request validation failed.',
+                'errors' => [
+                    'email' => ['The email field must be a valid email address.'],
+                ],
+            ], 422);
+        })->middleware(RequestCollector::class)->name('validation.response.custom-message');
 
         $router->post('/domain-conflict', function () {
             return response()->json([
