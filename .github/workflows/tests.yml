@@ -18,24 +18,44 @@ jobs:
             laravel: '11'
             laravel_label: '11'
             testbench: '9'
-            lockfile: '.github/locks/composer.laravel11.lock'
+            dependency_set: latest
           - php: '8.3'
             laravel: '11'
             laravel_label: '11'
             testbench: '9'
-            lockfile: '.github/locks/composer.laravel11.lock'
+            dependency_set: latest
           - php: '8.2'
             laravel: '12'
             laravel_label: '12'
             testbench: '10'
-            lockfile: '.github/locks/composer.laravel12.lock'
+            dependency_set: latest
           - php: '8.3'
             laravel: '12'
             laravel_label: '12'
             testbench: '10'
-            lockfile: '.github/locks/composer.laravel12.lock'
+            dependency_set: latest
+          - php: '8.2'
+            laravel: '11'
+            laravel_label: '11'
+            testbench: '9'
+            dependency_set: lowest
+          - php: '8.3'
+            laravel: '11'
+            laravel_label: '11'
+            testbench: '9'
+            dependency_set: lowest
+          - php: '8.2'
+            laravel: '12'
+            laravel_label: '12'
+            testbench: '10'
+            dependency_set: lowest
+          - php: '8.3'
+            laravel: '12'
+            laravel_label: '12'
+            testbench: '10'
+            dependency_set: lowest
 
-    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel_label }} / Testbench ${{ matrix.testbench }}
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel_label }} / Testbench ${{ matrix.testbench }} / ${{ matrix.dependency_set }}
 
     steps:
       - uses: actions/checkout@v4
@@ -47,11 +67,24 @@ jobs:
           extensions: mbstring, sqlite, pdo_sqlite
           tools: composer:v2
 
-      - name: Select lockfile
-        run: cp "${{ matrix.lockfile }}" composer.lock
-
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist
+      - name: Resolve dependencies
+        run: |
+          FLAGS="--no-interaction --prefer-dist"
+          if [ "${{ matrix.dependency_set }}" = "lowest" ]; then
+            FLAGS="$FLAGS --prefer-lowest --prefer-stable"
+          else
+            FLAGS="$FLAGS --prefer-stable"
+          fi
+          composer update \
+            --with illuminate/console:^${{ matrix.laravel }}.0 \
+            --with illuminate/contracts:^${{ matrix.laravel }}.0 \
+            --with illuminate/database:^${{ matrix.laravel }}.0 \
+            --with illuminate/http:^${{ matrix.laravel }}.0 \
+            --with illuminate/support:^${{ matrix.laravel }}.0 \
+            --with illuminate/validation:^${{ matrix.laravel }}.0 \
+            --with orchestra/testbench:^${{ matrix.testbench }}.0 \
+            --with-all-dependencies \
+            $FLAGS
 
       - name: Pint
         run: composer lint
@@ -78,7 +111,7 @@ jobs:
       - name: Demo app smoke
         working-directory: examples/laravel12-demo
         run: |
-          composer install --no-interaction --prefer-dist
+          composer update --no-interaction --prefer-dist --prefer-stable
           cp .env.example .env
           touch database/database.sqlite
           php artisan key:generate --force
