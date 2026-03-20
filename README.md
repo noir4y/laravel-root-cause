@@ -1,33 +1,87 @@
 # Laravel Root Cause
 
-Deterministic root-cause diagnostics for Laravel applications.
+Deterministic root-cause diagnostics for Laravel failures.
 
-Laravel Root Cause collects structured runtime signals from Laravel requests and turns them into reproducible, machine-readable diagnostics. It is designed to help developers inspect failures, understand likely causes, and export trace data for downstream tooling.
+Laravel Root Cause turns requests, validation failures, exceptions, and query pathologies into reproducible diagnoses with structured JSON output. It is built for cases where you want a deterministic answer, not a generic observability dashboard.
 
-It is not an APM platform, a Telescope-style UI, or a full observability suite.
+## Why This Exists
 
-## Scope
+Telescope is broad observability. Debugbar is a local debugging UI. Ray is a workflow-friendly inspector. Laravel Root Cause is narrower: it classifies the failure, explains why it matched, and exports AI-consumable JSON with candidate fixes.
 
-Current scope in v0.1 includes:
+| Tool | Best for | Output |
+| --- | --- | --- |
+| Telescope | Wide framework observability | UI-heavy trace inspection |
+| Debugbar | Local page-level debugging | Browser overlay and debug panels |
+| Ray | Fast feedback in your workflow | Interactive developer console |
+| Laravel Root Cause | Deterministic diagnosis of a failing request | CLI summary + structured JSON |
 
-- request trace collection
-- validation failure normalization
-- exception normalization
-- query aggregation with simple N+1 and duplicate burst detection
-- file-based trace storage
-- Artisan commands for inspecting traces and diagnostics
-- structured JSON export for downstream tooling, including AI agents
-
-The package intentionally does not include a Telescope-style UI, Pulse-style dashboards, or a full MCP server yet.
-
-## Installation
+## Try It In 3 Minutes
 
 ```bash
-composer require noir/laravel-root-cause
+composer require noir4y/laravel-root-cause
 php artisan root-cause:install
+# trigger one failing or pathological request first
+php artisan root-cause:trace latest
+php artisan root-cause:export latest --format=json
 ```
 
-By default, the package auto-registers request middleware for the `web` and `api` groups. Traces are written to `storage/app/root-cause`.
+The package auto-registers request collection for the `web` and `api` groups by default. Collection is enabled automatically in `APP_ENV=local` and stays off elsewhere until you set `ROOT_CAUSE_ENABLED=true`. Traces are written to `storage/app/root-cause`.
+
+## What The Output Looks Like
+
+CLI diagnosis:
+
+```text
+Trace: trc_validation_failure
+Root cause: validation_contract_mismatch
+Confidence: 0.76
+
+Summary: Error 422 occurred due to a mismatch between StoreUserRequest and payload.
+
+Evidence
+- StoreUserRequest failed on email.required
+- Payload keys: [name]
+- Route: users.store / Controller: App\Http\Controllers\UserController@store
+
+Suggested fix
+- Include the required field "email" in the request payload or make the rule nullable.
+- Review StoreUserRequest to confirm the expected payload keys still match the frontend contract.
+
+Repro
+- {"method":"POST","uri":"/users","route_name":"users.store","payload_keys":["name"]}
+```
+
+JSON export:
+
+```json
+{
+  "trace_id": "trc_exception",
+  "diagnosis": {
+    "root_cause_category": "unhandled_exception",
+    "confidence": 0.62,
+    "candidate_fixes": [
+      "Inspect the first application frame and add a focused regression test for RuntimeException."
+    ]
+  }
+}
+```
+
+Screenshots:
+
+![Terminal diagnosis](docs/assets/terminal-diagnosis.svg)
+
+![JSON export](docs/assets/json-export.svg)
+
+## Public Docs
+
+- [Quickstart](docs/quickstart.md)
+- [Production safety](docs/production-safety.md)
+- [Validation failure incident](docs/incidents/validation-failure.md)
+- [Exception incident](docs/incidents/exception.md)
+- [Query pathology incident](docs/incidents/query-pathology.md)
+- [v0.2.0 release notes](docs/releases/v0.2.0.md)
+- Demo app: [`examples/laravel12-demo`](examples/laravel12-demo)
+  It reproduces the same incident classes locally; canonical snapshots live under `docs/incidents`.
 
 ## Commands
 
@@ -36,9 +90,8 @@ php artisan root-cause:trace latest
 php artisan root-cause:failed-request
 php artisan root-cause:query-pathology
 php artisan root-cause:export latest --format=json
+php artisan root-cause:prune --days=7
 ```
-
-These commands let you inspect the most recent trace, review failed requests, detect query pathologies, and export trace data as JSON.
 
 ## Development
 
@@ -48,9 +101,8 @@ composer check
 ```
 
 Local Git hooks live in `.githooks/`. `composer install` configures `core.hooksPath` automatically so `git commit` runs `composer lint`, `composer analyse`, and `composer test` before creating a commit.
-Local Git hooks live in `.githooks/`. Running `composer install` configures `core.hooksPath` automatically, so `git commit` runs `composer lint`, `composer analyse`, and `composer test` before creating a commit.
 
-## Data model
+## Data Model
 
 Each stored artifact is a `TraceEnvelope` containing:
 
@@ -59,8 +111,4 @@ Each stored artifact is a `TraceEnvelope` containing:
 - normalized signals
 - a deterministic `DiagnosisReport`
 
-This JSON format is intended to be the primary machine-readable interface for downstream tooling, including AI agents.
-
-## Roadmap
-
-The repository already includes a rules catalog and prompt templates under `resources/`, so an MCP layer can be added later without changing the underlying trace format.
+This JSON format is the primary machine-readable interface for downstream tooling, including AI agents.

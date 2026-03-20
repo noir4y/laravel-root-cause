@@ -1,0 +1,67 @@
+{
+  "trace_id": "trc_exception",
+  "kind": "http_request",
+  "started_at": "2026-03-20T12:10:01+09:00",
+  "ended_at": "2026-03-20T12:10:02+09:00",
+  "environment": "testing",
+  "app": {
+    "php_version": "8.3.0",
+    "laravel_version": "12.x"
+  },
+  "entrypoint": {
+    "method": "GET",
+    "uri": "/explode",
+    "route_name": "explode"
+  },
+  "context": {
+    "request_url": "http://localhost/explode",
+    "input_keys": [],
+    "input_shape": {},
+    "query_keys": [],
+    "header_keys": [
+      "accept"
+    ]
+  },
+  "response": {
+    "status_code": 500
+  },
+  "signals": [
+    {
+      "type": "exception_thrown",
+      "captured_at": "2026-03-20T12:10:01+09:00",
+      "payload": {
+        "exception_class": "RuntimeException",
+        "message": "Boom from route",
+        "status_code": 500,
+        "application_frames": [
+          {
+            "file": "/app/Http/Controllers/BoomController.php",
+            "line": 18,
+            "class": "App\\Http\\Controllers\\BoomController",
+            "function": "__invoke"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "type": "exception",
+          "class": "RuntimeException",
+          "message": "Boom from route"
+        },
+        {
+          "type": "stack_frame",
+          "file": "/app/Http/Controllers/BoomController.php",
+          "line": 18,
+          "class": "App\\Http\\Controllers\\BoomController",
+          "function": "__invoke"
+        },
+        {
+          "type": "query_summary",
+          "fingerprint": "select * from \"users\" where \"id\" = ?",
+          "count": 3,
+          "duration_ms": 6.4
+        }
+      ]
+    }
+  ]
+}

@@ -75,19 +75,19 @@ class Redactor
 
     public function sanitizeExceptionMessage(Throwable $throwable): string
     {
-        if (! $throwable instanceof QueryException || ! $this->shouldRedactSqlBindings()) {
-            return $throwable->getMessage();
+        if ($throwable instanceof QueryException && $this->shouldRedactSqlBindings()) {
+            $message = 'Database query failed; SQL text redacted';
+
+            $bindingsCount = count($throwable->getBindings());
+
+            if ($bindingsCount > 0) {
+                $message .= sprintf(' with %d bindings redacted', $bindingsCount);
+            }
+
+            return $message;
         }
 
-        $message = 'Database query failed; SQL text redacted';
-
-        $bindingsCount = count($throwable->getBindings());
-
-        if ($bindingsCount > 0) {
-            $message .= sprintf(' with %d bindings redacted', $bindingsCount);
-        }
-
-        return $message;
+        return $this->sanitizePlainExceptionMessage($throwable->getMessage());
     }
 
     protected function isRedactedKey(string $key): bool
@@ -133,5 +133,26 @@ class Redactor
     protected function shouldRedactSqlBindings(): bool
     {
         return ! in_array($this->config['sql_bindings'] ?? true, [false, 0, '0'], true);
+    }
+
+    protected function sanitizePlainExceptionMessage(string $message): string
+    {
+        $sanitized = preg_replace(
+            [
+                '/\b(password|token|secret|api[_-]?key|authorization)\b\s*[:=]?\s*[^\s,;]+/i',
+                '/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i',
+                '/https?:\/\/\S+/i',
+                '/\b[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/',
+            ],
+            [
+                '$1 [redacted]',
+                '[redacted-email]',
+                '[redacted-url]',
+                '[redacted-token]',
+            ],
+            $message
+        );
+
+        return Str::squish($sanitized ?? $message);
     }
 }

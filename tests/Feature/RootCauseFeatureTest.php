@@ -9,6 +9,20 @@ use LaravelRootCause\Tests\TestCase;
 
 class RootCauseFeatureTest extends TestCase
 {
+    /**
+     * @return array<string, array{0: string, 1: array<string, string>}>
+     */
+    public static function responseValidationProvider(): array
+    {
+        return [
+            'default message' => ['/response-validation', ['email' => 'not-an-email']],
+            'translated message' => ['/response-validation-translated', ['email' => 'not-an-email']],
+            'framework wording diff' => ['/response-validation-framework-diff', ['email' => 'not-an-email']],
+            'custom exception renderer' => ['/response-validation-custom-renderer', ['email' => 'not-an-email']],
+            'custom standard-like message' => ['/response-validation-custom-message', ['email' => 'not-an-email']],
+        ];
+    }
+
     public function test_it_persists_a_validation_diagnosis_for_failed_requests(): void
     {
         $this->postJson('/users', ['name' => 'Taylor'])
@@ -59,6 +73,24 @@ class RootCauseFeatureTest extends TestCase
         $this->assertSame(['email' => ['email']], $signal->payload['failed_fields']);
         $this->assertSame(['email'], $trace->context['input_keys']);
         $this->assertArrayNotHasKey('password', $inputShape);
+    }
+
+    /**
+     * @dataProvider responseValidationProvider
+     *
+     * @param  array<string, string>  $payload
+     */
+    public function test_it_diagnoses_framework_style_validation_responses_without_an_attached_exception(string $uri, array $payload): void
+    {
+        $this->postJson($uri, $payload)
+            ->assertStatus(422);
+
+        $trace = $this->latestTrace();
+        $signal = $trace->signalsOfType('validation_failed')[0] ?? null;
+
+        $this->assertNotNull($signal);
+        $this->assertSame('validation_contract_mismatch', $trace->diagnosis?->rootCauseCategory);
+        $this->assertSame(['email' => ['reported']], $signal->payload['failed_fields']);
     }
 
     public function test_it_does_not_treat_domain_422_payloads_as_validation_failures(): void

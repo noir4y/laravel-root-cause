@@ -74,4 +74,21 @@ class RedactorTest extends TestCase
         $this->assertStringNotContainsString('select * from "users"', $message);
         $this->assertSame('Database query failed; SQL text redacted', $message);
     }
+
+    public function test_it_redacts_common_secret_like_values_from_plain_exception_messages(): void
+    {
+        $redactor = new Redactor;
+        $exception = new \RuntimeException(
+            'Invite failed for taylor@example.com token=super-secret-value https://example.com/reset/abc.def.ghi'
+        );
+
+        $message = $redactor->sanitizeExceptionMessage($exception);
+
+        $this->assertStringNotContainsString('taylor@example.com', $message);
+        $this->assertStringNotContainsString('super-secret-value', $message);
+        $this->assertStringNotContainsString('https://example.com/reset/abc.def.ghi', $message);
+        $this->assertStringContainsString('[redacted-email]', $message);
+        $this->assertStringContainsString('token [redacted]', $message);
+        $this->assertStringContainsString('[redacted-url]', $message);
+    }
 }

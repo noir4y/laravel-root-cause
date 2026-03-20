@@ -1,10 +1,13 @@
 <?php
 
 return [
+    'enabled' => env('ROOT_CAUSE_ENABLED', env('APP_ENV', 'production') === 'local'),
+
     'driver' => env('ROOT_CAUSE_DRIVER', 'file'),
 
     'storage' => [
         'path' => env('ROOT_CAUSE_STORAGE_PATH', storage_path('app/root-cause')),
+        'retention_days' => env('ROOT_CAUSE_RETENTION_DAYS', 7),
     ],
 
     'collectors' => [

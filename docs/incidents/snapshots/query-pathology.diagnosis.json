@@ -1,0 +1,30 @@
+{
+  "summary": "The same query fingerprint is being repeated in a short period of time",
+  "root_cause_category": "duplicate_query_burst",
+  "confidence": 0.78,
+  "supporting_evidence": [
+    {
+      "type": "query_pathology",
+      "classification": "duplicate_query_burst",
+      "fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+      "count": 5,
+      "duration_ms": 5.87
+    }
+  ],
+  "affected_files": [
+    "/app/Http/Controllers/InvoiceController.php"
+  ],
+  "candidate_fixes": [
+    "Add eager loading for the repeated relation path if this query happens inside a collection render.",
+    "Move repeated lookups out of loops and batch them before rendering or serialization.",
+    "Cache or memoize the repeated lookup when the same fingerprint is executed many times in one trace."
+  ],
+  "repro": {
+    "method": "GET",
+    "uri": "/invoices",
+    "query_fingerprint": "select * from \"invoices\" where \"customer_id\" = ?",
+    "query_count": 5
+  },
+  "token_budget_hint": "small",
+  "metadata": {}
+}
