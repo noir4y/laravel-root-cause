@@ -10,14 +10,21 @@ use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Testing\TestResponse;
 use LaravelRootCause\Collectors\RequestCollector;
 use LaravelRootCause\RootCauseServiceProvider;
 use LaravelRootCause\Tests\Fixtures\Models\NPlusOneProbe;
 use LaravelRootCause\Tests\Fixtures\Models\User;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Symfony\Component\HttpFoundation\Response;
 
 abstract class TestCase extends Orchestra
 {
+    /**
+     * @var TestResponse<Response>|null
+     */
+    protected static ?TestResponse $latestResponse = null;
+
     protected function getPackageProviders($app): array
     {
         return [RootCauseServiceProvider::class];
