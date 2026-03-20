@@ -116,19 +116,6 @@ jobs:
           touch database/database.sqlite
           php artisan key:generate --force
           php artisan migrate --seed --force
-          php artisan serve --host=127.0.0.1 --port=8000 >/tmp/root-cause-demo.log 2>&1 &
-          server_pid=$!
-          trap 'kill $server_pid' EXIT
-          for attempt in $(seq 1 30); do
-            if curl --silent --fail http://127.0.0.1:8000/ >/dev/null; then
-              break
-            fi
-            if [ "$attempt" -eq 30 ]; then
-              cat /tmp/root-cause-demo.log
-              exit 1
-            fi
-            sleep 1
-          done
-          test "$(curl --silent --output /tmp/root-cause-validation.json --write-out '%{http_code}' http://127.0.0.1:8000/api/demo/validation-failure)" = "422"
+          test "$(php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class); $request = Illuminate\Http\Request::create("/api/demo/validation-failure", "GET"); $response = $kernel->handle($request); $kernel->terminate($request, $response); echo $response->getStatusCode();')" = "422"
           php artisan root-cause:failed-request >/tmp/root-cause-failed-request.txt
           grep -F 'Root cause: validation_contract_mismatch' /tmp/root-cause-failed-request.txt
