@@ -63,12 +63,6 @@
             "@analyse",
             "@test"
         ],
-        "hooks:install": "sh scripts/install-git-hooks.sh",
-        "post-install-cmd": [
-            "@hooks:install"
-        ],
-        "post-update-cmd": [
-            "@hooks:install"
-        ]
+        "hooks:install": "sh scripts/install-git-hooks.sh"
     }
 }
