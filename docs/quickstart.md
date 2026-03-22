@@ -28,6 +28,8 @@ php artisan root-cause:export latest --path=storage/app/root-cause/latest-export
 
 The JSON export is the stable interface for downstream tools and AI agents.
 
+The compatibility policy for stable fields is documented in [JSON contract](json-contract.md).
+
 ## Example Output
 
 ```text

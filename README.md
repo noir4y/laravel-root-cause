@@ -34,6 +34,7 @@ If you are adopting the package in an application, start with the install and ex
 Use these docs as the canonical follow-up:
 
 - [Quickstart](docs/quickstart.md) for install and first diagnosis flow
+- [JSON contract](docs/json-contract.md) for stable machine-readable fields
 - [Production safety](docs/production-safety.md) for non-local environments
 
 ## What The Output Looks Like
@@ -84,6 +85,7 @@ Screenshots:
 ## Public Docs
 
 - [Quickstart](docs/quickstart.md)
+- [JSON contract](docs/json-contract.md)
 - [Production safety](docs/production-safety.md)
 - [Validation failure incident](docs/incidents/validation-failure.md)
 - [Exception incident](docs/incidents/exception.md)
@@ -126,4 +128,4 @@ Each stored artifact is a `TraceEnvelope` containing:
 - normalized signals
 - a deterministic `DiagnosisReport`
 
-This JSON format is the primary machine-readable interface for downstream tooling, including AI agents.
+The JSON export compatibility policy for downstream tooling is documented in [JSON contract](docs/json-contract.md).
