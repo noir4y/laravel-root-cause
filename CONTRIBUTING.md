@@ -7,7 +7,13 @@ composer install
 composer check
 ```
 
-`composer install` configures `core.hooksPath` to `.githooks`, so local commits run `composer lint`, `composer analyse`, and `composer test`.
+Optional Git hooks:
+
+```bash
+composer hooks:install
+```
+
+`composer hooks:install` is optional. Run it only if you want local commits to use the repository `.githooks` pre-commit hook for `composer lint`, `composer analyse`, and `composer test`.
 
 ## Supported Matrix
 
