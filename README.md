@@ -27,6 +27,15 @@ php artisan root-cause:export latest --format=json
 
 The package auto-registers request collection for the `web` and `api` groups by default. Collection is enabled automatically in `APP_ENV=local` and stays off elsewhere until you set `ROOT_CAUSE_ENABLED=true`. Traces are written to `storage/app/root-cause`.
 
+## For Users
+
+If you are adopting the package in an application, start with the install and export flow in [Try It In 3 Minutes](#try-it-in-3-minutes).
+
+Use these docs as the canonical follow-up:
+
+- [Quickstart](docs/quickstart.md) for install and first diagnosis flow
+- [Production safety](docs/production-safety.md) for non-local environments
+
 ## What The Output Looks Like
 
 CLI diagnosis:
@@ -93,14 +102,20 @@ php artisan root-cause:export latest --format=json
 php artisan root-cause:prune --days=7
 ```
 
-## Development
+## For Contributors
 
 ```bash
 composer install
 composer check
 ```
 
-Local Git hooks live in `.githooks/`. `composer install` configures `core.hooksPath` automatically so `git commit` runs `composer lint`, `composer analyse`, and `composer test` before creating a commit.
+Optional Git hooks:
+
+```bash
+composer hooks:install
+```
+
+Local Git hooks live in `.githooks/`. Run `composer hooks:install` only if you want local commits to execute `composer lint`, `composer analyse`, and `composer test` before the commit is created.
 
 ## Data Model
 
