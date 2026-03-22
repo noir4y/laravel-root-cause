@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  matrix:
+  check:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -55,7 +55,7 @@ jobs:
             testbench: '10'
             dependency_set: lowest
 
-    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel_label }} / Testbench ${{ matrix.testbench }} / ${{ matrix.dependency_set }}
+    name: Check / PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel_label }} / Testbench ${{ matrix.testbench }} / ${{ matrix.dependency_set }}
 
     steps:
       - uses: actions/checkout@v4
@@ -68,29 +68,86 @@ jobs:
           tools: composer:v2
 
       - name: Resolve dependencies
-        run: |
-          FLAGS="--no-interaction --prefer-dist"
-          if [ "${{ matrix.dependency_set }}" = "lowest" ]; then
-            FLAGS="$FLAGS --prefer-lowest --prefer-stable"
-          else
-            FLAGS="$FLAGS --prefer-stable"
-          fi
-          composer update \
-            --with illuminate/console:^${{ matrix.laravel }}.0 \
-            --with illuminate/contracts:^${{ matrix.laravel }}.0 \
-            --with illuminate/database:^${{ matrix.laravel }}.0 \
-            --with illuminate/http:^${{ matrix.laravel }}.0 \
-            --with illuminate/support:^${{ matrix.laravel }}.0 \
-            --with illuminate/validation:^${{ matrix.laravel }}.0 \
-            --with orchestra/testbench:^${{ matrix.testbench }}.0 \
-            --with-all-dependencies \
-            $FLAGS
+        env:
+          DEPENDENCY_SET: ${{ matrix.dependency_set }}
+          LARAVEL_VERSION: ${{ matrix.laravel }}
+          TESTBENCH_VERSION: ${{ matrix.testbench }}
+        run: ./scripts/resolve-ci-dependencies.sh
+
+      - name: Composer check
+        run: composer check
+
+  lint:
+    runs-on: ubuntu-latest
+
+    name: Lint / PHP 8.3 / Laravel 12 / Testbench 10 / latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: mbstring, sqlite, pdo_sqlite
+          tools: composer:v2
+
+      - name: Resolve dependencies
+        env:
+          DEPENDENCY_SET: latest
+          LARAVEL_VERSION: '12'
+          TESTBENCH_VERSION: '10'
+        run: ./scripts/resolve-ci-dependencies.sh
 
       - name: Pint
         run: composer lint
 
+  analyse:
+    runs-on: ubuntu-latest
+
+    name: Analyse / PHP 8.3 / Laravel 12 / Testbench 10 / latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: mbstring, sqlite, pdo_sqlite
+          tools: composer:v2
+
+      - name: Resolve dependencies
+        env:
+          DEPENDENCY_SET: latest
+          LARAVEL_VERSION: '12'
+          TESTBENCH_VERSION: '10'
+        run: ./scripts/resolve-ci-dependencies.sh
+
       - name: PHPStan
         run: composer analyse
+
+  test:
+    runs-on: ubuntu-latest
+
+    name: Test / PHP 8.3 / Laravel 12 / Testbench 10 / latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: mbstring, sqlite, pdo_sqlite
+          tools: composer:v2
+
+      - name: Resolve dependencies
+        env:
+          DEPENDENCY_SET: latest
+          LARAVEL_VERSION: '12'
+          TESTBENCH_VERSION: '10'
+        run: ./scripts/resolve-ci-dependencies.sh
 
       - name: PHPUnit
         run: composer test
