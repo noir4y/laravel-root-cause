@@ -8,6 +8,7 @@ use LaravelRootCause\Diagnostics\RuleEngine;
 use LaravelRootCause\Export\CliTraceFormatter;
 use LaravelRootCause\Export\JsonTraceExporter;
 use LaravelRootCause\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class DocumentationExamplesTest extends TestCase
 {
@@ -24,9 +25,7 @@ class DocumentationExamplesTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider cliSnippetProvider
-     */
+    #[DataProvider('cliSnippetProvider')]
     public function test_public_cli_snippets_match_generated_output(string $path, string $fixture, string $language, int $index): void
     {
         $this->storeFixtureTrace($fixture);

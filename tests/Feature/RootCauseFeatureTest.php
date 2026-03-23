@@ -8,6 +8,7 @@ use LaravelRootCause\Data\Evidence;
 use LaravelRootCause\Data\TraceEnvelope;
 use LaravelRootCause\Support\TraceFinder;
 use LaravelRootCause\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Throwable;
 
 class RootCauseFeatureTest extends TestCase
@@ -99,10 +100,9 @@ class RootCauseFeatureTest extends TestCase
     }
 
     /**
-     * @dataProvider responseValidationProvider
-     *
      * @param  array<string, string>  $payload
      */
+    #[DataProvider('responseValidationProvider')]
     public function test_it_diagnoses_framework_style_validation_responses_without_an_attached_exception(string $uri, array $payload): void
     {
         $this->postJson($uri, $payload)
