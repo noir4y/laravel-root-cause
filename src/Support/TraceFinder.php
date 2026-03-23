@@ -21,7 +21,7 @@ class TraceFinder
     public function latestFailed(): ?TraceEnvelope
     {
         foreach ($this->repository->recent(PHP_INT_MAX) as $trace) {
-            if (ValueNormalizer::int($trace->response['status_code'] ?? 200, 200) >= 400) {
+            if ($trace->diagnosticStatusCode(200) >= 400) {
                 return $trace;
             }
         }

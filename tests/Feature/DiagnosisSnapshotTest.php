@@ -6,6 +6,7 @@ use LaravelRootCause\Data\TraceEnvelope;
 use LaravelRootCause\Diagnostics\RuleEngine;
 use LaravelRootCause\Support\ValueNormalizer;
 use LaravelRootCause\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class DiagnosisSnapshotTest extends TestCase
 {
@@ -23,9 +24,7 @@ class DiagnosisSnapshotTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider incidentProvider
-     */
+    #[DataProvider('incidentProvider')]
     public function test_public_incident_snapshots_match_the_rule_engine(string $fixture, string $snapshot): void
     {
         $trace = $this->loadFixture($fixture);

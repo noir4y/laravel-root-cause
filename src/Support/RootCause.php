@@ -2,11 +2,13 @@
 
 namespace LaravelRootCause\Support;
 
-use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use LaravelRootCause\Collectors\ExceptionCollector;
 use LaravelRootCause\Collectors\ValidationCollector;
 use LaravelRootCause\Contracts\TraceRepository;
@@ -16,6 +18,7 @@ use LaravelRootCause\Data\TraceEnvelope;
 use LaravelRootCause\Diagnostics\RuleEngine;
 use LaravelRootCause\Redaction\Redactor;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
@@ -123,7 +126,10 @@ class RootCause
             return;
         }
 
-        $trace->response['status_code'] = 422;
+        $this->setDiagnosticStatusCode(
+            $trace,
+            $throwable instanceof ValidationException ? $throwable->status : 422
+        );
         $trace->addSignal($this->validationCollector->collect($throwable, $request));
     }
 
@@ -145,7 +151,7 @@ class RootCause
             return;
         }
 
-        $trace->response['status_code'] = 422;
+        $this->setDiagnosticStatusCode($trace, 422);
         $trace->addSignal($signal);
     }
 
@@ -164,7 +170,10 @@ class RootCause
         $queryEvidence = $this->topQueryEvidence($trace);
         $signal = $this->exceptionCollector->collect($throwable, $queryEvidence);
 
-        $trace->response['status_code'] = $signal->payload['status_code'] ?? $this->statusFromThrowable($throwable);
+        $this->setDiagnosticStatusCode(
+            $trace,
+            ValueNormalizer::int($signal->payload['status_code'] ?? null, $this->statusFromThrowable($throwable) ?? 500)
+        );
         $trace->addSignal($signal);
     }
 
@@ -182,11 +191,10 @@ class RootCause
             return null;
         }
 
-        $statusCode = $response?->getStatusCode()
-            ?? $this->statusFromHandler($request, $throwable)
-            ?? $this->statusFromThrowable($throwable)
-            ?? ($trace->response['status_code'] ?? 200);
-        $trace->response['status_code'] = $statusCode;
+        $transportStatusCode = $this->resolvedTransportStatusCode($trace, $response, $throwable);
+        $diagnosticStatusCode = $this->resolvedDiagnosticStatusCode($trace, $throwable, $transportStatusCode);
+        $this->setTransportStatusCode($trace, $transportStatusCode);
+        $this->setDiagnosticStatusCode($trace, $diagnosticStatusCode);
         $trace->endedAt = now()->toAtomString();
 
         $this->appendQueryPathology($trace);
@@ -195,6 +203,37 @@ class RootCause
         $this->repository->save($trace);
         unset($this->activeTraces[$trace->traceId]);
         $this->context->clear();
+
+        return $trace;
+    }
+
+    public function refreshStoredTraceResponse(string $traceId, Response $response, ?Throwable $throwable = null): ?TraceEnvelope
+    {
+        if (! $this->isEnabled()) {
+            return null;
+        }
+
+        $trace = $this->repository->find($traceId);
+
+        if (! $trace) {
+            return null;
+        }
+
+        $transportStatusCode = $this->resolvedTransportStatusCode($trace, $response, $throwable);
+        $diagnosticStatusCode = $this->resolvedDiagnosticStatusCode($trace, $throwable, $transportStatusCode);
+
+        if (
+            $trace->transportStatusCode($transportStatusCode) === $transportStatusCode
+            && $trace->diagnosticStatusCode($diagnosticStatusCode) === $diagnosticStatusCode
+        ) {
+            return $trace;
+        }
+
+        $this->setTransportStatusCode($trace, $transportStatusCode);
+        $this->setDiagnosticStatusCode($trace, $diagnosticStatusCode);
+        $trace->diagnosis = $this->ruleEngine->diagnose($trace);
+
+        $this->repository->save($trace);
 
         return $trace;
     }
@@ -345,40 +384,98 @@ class RootCause
         return false;
     }
 
+    protected function resolvedTransportStatusCode(TraceEnvelope $trace, ?Response $response, ?Throwable $throwable): int
+    {
+        if ($response instanceof StreamedResponse && $throwable instanceof Throwable) {
+            return $this->statusFromThrowable($throwable) ?? $trace->transportStatusCode(500);
+        }
+
+        if ($response instanceof Response) {
+            return $response->getStatusCode();
+        }
+
+        return $this->statusFromThrowable($throwable) ?? $trace->transportStatusCode(200);
+    }
+
+    protected function resolvedDiagnosticStatusCode(TraceEnvelope $trace, ?Throwable $throwable, int $transportStatusCode): int
+    {
+        if ($this->hasSignalType($trace, 'validation_failed')) {
+            return $this->statusFromThrowable($throwable) ?? $trace->diagnosticStatusCode(422);
+        }
+
+        if ($this->hasSignalType($trace, 'exception_thrown')) {
+            return $this->statusFromThrowable($throwable) ?? $trace->diagnosticStatusCode(500);
+        }
+
+        return $trace->diagnosticStatusCode($transportStatusCode);
+    }
+
+    protected function setTransportStatusCode(TraceEnvelope $trace, int $statusCode): void
+    {
+        $trace->response['status_code'] = $statusCode;
+        $trace->response['transport_status_code'] = $statusCode;
+    }
+
+    protected function setDiagnosticStatusCode(TraceEnvelope $trace, int $statusCode): void
+    {
+        $trace->response['diagnostic_status_code'] = $statusCode;
+    }
+
     protected function statusFromThrowable(?Throwable $throwable): ?int
     {
         if (! $throwable) {
             return null;
         }
 
-        if ($throwable instanceof HttpExceptionInterface) {
-            return $throwable->getStatusCode();
-        }
+        $current = $throwable;
 
-        if (method_exists($throwable, 'status')) {
-            $status = $throwable->status();
-
-            if (is_int($status) || is_float($status) || (is_string($status) && is_numeric($status))) {
-                return (int) $status;
+        do {
+            if ($current instanceof HttpResponseException) {
+                return $current->getResponse()->getStatusCode();
             }
-        }
+
+            if ($current instanceof HttpExceptionInterface) {
+                return $current->getStatusCode();
+            }
+
+            if ($current instanceof ValidationException) {
+                return $current->status;
+            }
+
+            if ($current instanceof ModelNotFoundException) {
+                return 404;
+            }
+
+            if (is_a($current, 'Illuminate\\Auth\\AuthenticationException')) {
+                return 401;
+            }
+
+            if (is_a($current, 'Illuminate\\Auth\\Access\\AuthorizationException')) {
+                $status = $current->status();
+
+                if ($status !== null) {
+                    return (int) $status;
+                }
+
+                return 403;
+            }
+
+            if (is_a($current, 'Illuminate\\Session\\TokenMismatchException')) {
+                return 419;
+            }
+
+            if (method_exists($current, 'status')) {
+                $status = $current->status();
+
+                if (is_int($status) || is_float($status) || (is_string($status) && is_numeric($status))) {
+                    return (int) $status;
+                }
+            }
+
+            $current = $current->getPrevious();
+        } while ($current instanceof Throwable);
 
         return 500;
-    }
-
-    protected function statusFromHandler(?Request $request, ?Throwable $throwable): ?int
-    {
-        if (! $request || ! $throwable || ! $this->app->bound(ExceptionHandler::class)) {
-            return null;
-        }
-
-        try {
-            $response = $this->app->make(ExceptionHandler::class)->render($request, $throwable);
-        } catch (Throwable) {
-            return null;
-        }
-
-        return $response->getStatusCode();
     }
 
     protected function controllerAction(Request $request): ?string

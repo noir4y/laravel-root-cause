@@ -55,7 +55,7 @@ class RuleEngine
         $inputKeys = ValueNormalizer::stringList($signal->payload['input_keys'] ?? []);
         $formRequest = ValueNormalizer::nullableString($signal->payload['form_request'] ?? null);
         $controller = ValueNormalizer::nullableString($trace->entrypoint['controller'] ?? null);
-        $statusCode = ValueNormalizer::int($trace->response['status_code'] ?? 422, 422);
+        $statusCode = $trace->diagnosticStatusCode(422);
 
         return new DiagnosisReport(
             summary: sprintf(
@@ -182,7 +182,7 @@ class RuleEngine
 
         $frames = ValueNormalizer::listOfAssoc($signal->payload['application_frames'] ?? []);
         $exceptionClass = ValueNormalizer::string($signal->payload['exception_class'] ?? null, 'Exception');
-        $statusCode = ValueNormalizer::int($trace->response['status_code'] ?? 500, 500);
+        $statusCode = $trace->diagnosticStatusCode(500);
         $controller = ValueNormalizer::nullableString($trace->entrypoint['controller'] ?? null);
         $firstFrame = $frames[0] ?? null;
         $firstFrameFile = is_array($firstFrame) ? ValueNormalizer::nullableString($firstFrame['file'] ?? null) : null;
