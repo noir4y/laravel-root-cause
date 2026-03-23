@@ -32,6 +32,22 @@ class TraceEnvelope
         $this->signals[] = $signal;
     }
 
+    public function transportStatusCode(int $default = 200): int
+    {
+        return ValueNormalizer::int(
+            $this->response['transport_status_code'] ?? $this->response['status_code'] ?? null,
+            $default
+        );
+    }
+
+    public function diagnosticStatusCode(int $default = 200): int
+    {
+        return ValueNormalizer::int(
+            $this->response['diagnostic_status_code'] ?? $this->response['status_code'] ?? null,
+            $default
+        );
+    }
+
     /**
      * @return array<int, Signal>
      */

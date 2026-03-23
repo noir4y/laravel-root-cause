@@ -2,10 +2,13 @@
 
 namespace LaravelRootCause\Tests\Feature;
 
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use LaravelRootCause\Contracts\TraceRepository;
 use LaravelRootCause\Data\Evidence;
 use LaravelRootCause\Data\TraceEnvelope;
+use LaravelRootCause\Support\TraceFinder;
 use LaravelRootCause\Tests\TestCase;
+use Throwable;
 
 class RootCauseFeatureTest extends TestCase
 {
@@ -75,6 +78,26 @@ class RootCauseFeatureTest extends TestCase
         $this->assertArrayNotHasKey('password', $inputShape);
     }
 
+    public function test_it_tracks_transport_and_diagnostic_statuses_for_validation_redirects(): void
+    {
+        $this->from('/users/form')
+            ->post('/users', ['name' => 'Taylor'])
+            ->assertRedirect('/users/form');
+
+        $trace = $this->latestTrace();
+
+        $this->assertSame(302, $trace->response['status_code']);
+        $this->assertSame(302, $trace->response['transport_status_code']);
+        $this->assertSame(422, $trace->response['diagnostic_status_code']);
+        $this->assertSame('validation_contract_mismatch', $trace->diagnosis?->rootCauseCategory);
+
+        $this->assertNotNull($this->app);
+        $finder = $this->app->make(TraceFinder::class);
+
+        $this->assertInstanceOf(TraceFinder::class, $finder);
+        $this->assertSame($trace->traceId, $finder->latestFailed()?->traceId);
+    }
+
     /**
      * @dataProvider responseValidationProvider
      *
@@ -123,6 +146,57 @@ class RootCauseFeatureTest extends TestCase
         ));
     }
 
+    public function test_it_uses_the_final_custom_rendered_transport_status_without_double_rendering(): void
+    {
+        $this->assertNotNull($this->app);
+
+        $innerHandler = $this->app->make(ExceptionHandler::class);
+        $handler = new class($innerHandler) implements ExceptionHandler
+        {
+            public int $renderCount = 0;
+
+            public function __construct(protected ExceptionHandler $innerHandler) {}
+
+            public function report(Throwable $e)
+            {
+                $this->innerHandler->report($e);
+            }
+
+            public function shouldReport(Throwable $e)
+            {
+                return $this->innerHandler->shouldReport($e);
+            }
+
+            public function render($request, Throwable $e)
+            {
+                $this->renderCount++;
+
+                if ($e instanceof \RuntimeException) {
+                    return redirect('/custom-error');
+                }
+
+                return $this->innerHandler->render($request, $e);
+            }
+
+            public function renderForConsole($output, Throwable $e)
+            {
+                $this->innerHandler->renderForConsole($output, $e);
+            }
+        };
+
+        $this->app->instance(ExceptionHandler::class, $handler);
+
+        $this->get('/explode')
+            ->assertRedirect('/custom-error');
+
+        $trace = $this->latestTrace();
+
+        $this->assertSame(302, $trace->response['status_code']);
+        $this->assertSame(302, $trace->response['transport_status_code']);
+        $this->assertSame(500, $trace->response['diagnostic_status_code']);
+        $this->assertSame(1, $handler->renderCount);
+    }
+
     public function test_it_ignores_handled_reported_exceptions_when_the_request_succeeds(): void
     {
         $this->getJson('/handled-report')
@@ -145,6 +219,42 @@ class RootCauseFeatureTest extends TestCase
 
         $this->assertSame(404, $trace->response['status_code']);
         $this->assertSame('missing_route_binding', $trace->diagnosis?->rootCauseCategory);
+    }
+
+    public function test_it_waits_for_stream_callbacks_before_persisting_the_trace(): void
+    {
+        $response = $this->get('/streamed-duplicate-query')
+            ->assertOk();
+
+        $this->assertNotNull($this->app);
+        $repository = $this->app->make(TraceRepository::class);
+
+        $this->assertInstanceOf(TraceRepository::class, $repository);
+        $this->assertNull($repository->latest());
+        $this->assertSame('stream-complete', $response->streamedContent());
+
+        $trace = $this->latestTrace();
+
+        $this->assertSame('duplicate_query_burst', $trace->diagnosis?->rootCauseCategory);
+        $this->assertCount(3, $trace->signalsOfType('query_executed'));
+    }
+
+    public function test_it_also_defers_chunked_streamed_responses_until_the_chunks_are_consumed(): void
+    {
+        $response = $this->get('/streamed-chunks-duplicate-query')
+            ->assertOk();
+
+        $this->assertNotNull($this->app);
+        $repository = $this->app->make(TraceRepository::class);
+
+        $this->assertInstanceOf(TraceRepository::class, $repository);
+        $this->assertNull($repository->latest());
+        $this->assertSame('chunk-1chunk-2', $response->streamedContent());
+
+        $trace = $this->latestTrace();
+
+        $this->assertSame('duplicate_query_burst', $trace->diagnosis?->rootCauseCategory);
+        $this->assertCount(3, $trace->signalsOfType('query_executed'));
     }
 
     protected function latestTrace(): TraceEnvelope

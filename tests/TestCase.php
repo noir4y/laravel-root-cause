@@ -17,6 +17,7 @@ use LaravelRootCause\Tests\Fixtures\Models\NPlusOneProbe;
 use LaravelRootCause\Tests\Fixtures\Models\User;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 abstract class TestCase extends Orchestra
 {
@@ -66,6 +67,28 @@ abstract class TestCase extends Orchestra
 
             return response()->json(['ok' => true]);
         }));
+
+        $this->configureRoute($router->get('/streamed-duplicate-query', function () {
+            return response()->stream(function (): void {
+                DB::select('select name from sqlite_master');
+                DB::select('select name from sqlite_master');
+                DB::select('select name from sqlite_master');
+
+                echo 'stream-complete';
+            });
+        }), 'streamed.duplicate-query');
+
+        $this->configureRoute($router->get('/streamed-chunks-duplicate-query', function () {
+            $chunks = (function (): \Generator {
+                DB::select('select name from sqlite_master');
+                yield 'chunk-1';
+                DB::select('select name from sqlite_master');
+                yield 'chunk-2';
+                DB::select('select name from sqlite_master');
+            })();
+
+            return new StreamedResponse($chunks);
+        }), 'streamed.chunks-duplicate-query');
 
         $this->configureRoute($router->post('/response-validation', function () {
             return response()->json([

@@ -22,3 +22,5 @@ These fields are expected to remain available with the same meaning across patch
 ## Scope
 
 This document defines the contract in prose only. The package does not currently publish a versioned JSON Schema, and consumers should ignore unknown fields so future additions do not break integrations.
+
+Outside the stable field set above, response metadata may include both transport and diagnostic status values. `response.status_code` and `response.transport_status_code` reflect the final HTTP response status observed from Laravel's response object, while `response.diagnostic_status_code` preserves the failure code used for diagnosis and trace filtering when the transport response is intentionally different, such as validation redirects or custom exception renderers. For streamed responses that fail after sending has started, the transport status may be a best-effort approximation from the response object or thrown exception because the on-wire status may already be committed.
