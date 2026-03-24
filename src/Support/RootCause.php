@@ -2,9 +2,8 @@
 
 namespace LaravelRootCause\Support;
 
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Str;
@@ -19,7 +18,6 @@ use LaravelRootCause\Diagnostics\RuleEngine;
 use LaravelRootCause\Redaction\Redactor;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 class RootCause
@@ -200,9 +198,12 @@ class RootCause
         $this->appendQueryPathology($trace);
         $trace->diagnosis = $this->ruleEngine->diagnose($trace);
 
-        $this->repository->save($trace);
-        unset($this->activeTraces[$trace->traceId]);
-        $this->context->clear();
+        try {
+            $this->persistTrace($trace);
+        } finally {
+            unset($this->activeTraces[$trace->traceId]);
+            $this->context->clear();
+        }
 
         return $trace;
     }
@@ -233,7 +234,7 @@ class RootCause
         $this->setDiagnosticStatusCode($trace, $diagnosticStatusCode);
         $trace->diagnosis = $this->ruleEngine->diagnose($trace);
 
-        $this->repository->save($trace);
+        $this->persistTrace($trace);
 
         return $trace;
     }
@@ -423,59 +424,29 @@ class RootCause
 
     protected function statusFromThrowable(?Throwable $throwable): ?int
     {
-        if (! $throwable) {
-            return null;
+        return ThrowableStatusResolver::resolve($throwable);
+    }
+
+    protected function persistTrace(TraceEnvelope $trace): void
+    {
+        try {
+            $this->repository->save($trace);
+        } catch (Throwable $exception) {
+            $this->reportPersistenceException($exception);
+        }
+    }
+
+    protected function reportPersistenceException(Throwable $exception): void
+    {
+        if (! $this->app->bound(ExceptionHandler::class)) {
+            return;
         }
 
-        $current = $throwable;
-
-        do {
-            if ($current instanceof HttpResponseException) {
-                return $current->getResponse()->getStatusCode();
-            }
-
-            if ($current instanceof HttpExceptionInterface) {
-                return $current->getStatusCode();
-            }
-
-            if ($current instanceof ValidationException) {
-                return $current->status;
-            }
-
-            if ($current instanceof ModelNotFoundException) {
-                return 404;
-            }
-
-            if (is_a($current, 'Illuminate\\Auth\\AuthenticationException')) {
-                return 401;
-            }
-
-            if (is_a($current, 'Illuminate\\Auth\\Access\\AuthorizationException')) {
-                $status = $current->status();
-
-                if ($status !== null) {
-                    return (int) $status;
-                }
-
-                return 403;
-            }
-
-            if (is_a($current, 'Illuminate\\Session\\TokenMismatchException')) {
-                return 419;
-            }
-
-            if (method_exists($current, 'status')) {
-                $status = $current->status();
-
-                if (is_int($status) || is_float($status) || (is_string($status) && is_numeric($status))) {
-                    return (int) $status;
-                }
-            }
-
-            $current = $current->getPrevious();
-        } while ($current instanceof Throwable);
-
-        return 500;
+        try {
+            $this->app->make(ExceptionHandler::class)->report($exception);
+        } catch (Throwable) {
+            // Persistence failures should never change the request outcome.
+        }
     }
 
     protected function controllerAction(Request $request): ?string

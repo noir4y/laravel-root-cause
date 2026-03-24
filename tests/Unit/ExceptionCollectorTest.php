@@ -4,12 +4,14 @@ namespace LaravelRootCause\Tests\Unit;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use LaravelRootCause\Collectors\ExceptionCollector;
 use LaravelRootCause\Data\Evidence;
 use LaravelRootCause\Redaction\Redactor;
 use LaravelRootCause\Support\StackFrameResolver;
 use LaravelRootCause\Tests\Fixtures\Models\User;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ExceptionCollectorTest extends TestCase
@@ -41,6 +43,7 @@ class ExceptionCollectorTest extends TestCase
 
         $this->assertSame('exception_thrown', $signal->type);
         $this->assertSame(ModelNotFoundException::class, $signal->payload['exception_class']);
+        $this->assertSame(404, $signal->payload['status_code']);
         $this->assertSame(User::class, $signal->payload['model']);
         $this->assertSame([99], $signal->payload['ids']);
         $this->assertSame(['exception', 'stack_frame', 'query_summary'], array_map(
@@ -49,7 +52,7 @@ class ExceptionCollectorTest extends TestCase
         ));
     }
 
-    public function test_it_redacts_query_exception_messages_and_uses_exception_defined_status_codes(): void
+    public function test_it_redacts_query_exception_messages_and_uses_resolved_exception_status_codes(): void
     {
         $stackFrameResolver = $this->createMock(StackFrameResolver::class);
         $stackFrameResolver->method('applicationFramesFromThrowable')->willReturn([]);
@@ -81,6 +84,12 @@ class ExceptionCollectorTest extends TestCase
         });
 
         $this->assertSame(409, $statusSignal->payload['status_code']);
+
+        $responseSignal = $collector->collect(
+            new HttpResponseException(new Response('', 429))
+        );
+
+        $this->assertSame(429, $responseSignal->payload['status_code']);
     }
 
     public function test_it_extracts_model_context_from_wrapped_not_found_exceptions(): void

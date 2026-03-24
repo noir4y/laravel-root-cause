@@ -174,4 +174,38 @@ class RootCauseTest extends PackageTestCase
         $this->assertInstanceOf(TraceEnvelope::class, $finished);
         $this->assertSame('n_plus_one_suspected', $finished->diagnosis?->rootCauseCategory);
     }
+
+    public function test_it_clears_runtime_state_when_trace_persistence_fails(): void
+    {
+        $repository = $this->createMock(TraceRepository::class);
+        $validationCollector = $this->createMock(ValidationCollector::class);
+        $exceptionCollector = $this->createMock(ExceptionCollector::class);
+        $ruleEngine = $this->createMock(RuleEngine::class);
+
+        $this->assertNotNull($this->app);
+
+        $ruleEngine->expects($this->once())
+            ->method('diagnose')
+            ->willReturn(null);
+
+        $repository->expects($this->once())
+            ->method('save')
+            ->willThrowException(new \RuntimeException('disk full'));
+
+        $rootCause = new RootCause(
+            $this->app,
+            $repository,
+            new RootCauseContext,
+            new Redactor,
+            $validationCollector,
+            $exceptionCollector,
+            $ruleEngine,
+        );
+
+        $trace = $rootCause->startRequest(Request::create('/persistence-failure', 'GET'));
+        $finished = $rootCause->finishRequest(new Response('', 200));
+
+        $this->assertSame($trace->traceId, $finished?->traceId);
+        $this->assertNull($rootCause->currentTrace());
+    }
 }

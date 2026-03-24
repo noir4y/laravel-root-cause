@@ -8,7 +8,7 @@ use LaravelRootCause\Data\Evidence;
 use LaravelRootCause\Data\Signal;
 use LaravelRootCause\Redaction\Redactor;
 use LaravelRootCause\Support\StackFrameResolver;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use LaravelRootCause\Support\ThrowableStatusResolver;
 use Throwable;
 
 class ExceptionCollector
@@ -77,18 +77,6 @@ class ExceptionCollector
 
     protected function statusCode(Throwable $throwable): int
     {
-        if ($throwable instanceof HttpExceptionInterface) {
-            return $throwable->getStatusCode();
-        }
-
-        if (method_exists($throwable, 'status')) {
-            $status = $throwable->status();
-
-            if (is_int($status) || is_float($status) || (is_string($status) && is_numeric($status))) {
-                return (int) $status;
-            }
-        }
-
-        return 500;
+        return ThrowableStatusResolver::resolve($throwable) ?? 500;
     }
 }
