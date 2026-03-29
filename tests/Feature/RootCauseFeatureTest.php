@@ -209,6 +209,46 @@ class RootCauseFeatureTest extends TestCase
         $this->assertNull($trace->diagnosis);
     }
 
+    public function test_it_keeps_request_responses_intact_when_trace_persistence_fails(): void
+    {
+        $this->assertNotNull($this->app);
+
+        $repository = new class implements TraceRepository
+        {
+            public int $saveAttempts = 0;
+
+            public function save(TraceEnvelope $trace): void
+            {
+                $this->saveAttempts++;
+
+                throw new \RuntimeException('disk full');
+            }
+
+            public function find(string $traceId): ?TraceEnvelope
+            {
+                return null;
+            }
+
+            public function latest(): ?TraceEnvelope
+            {
+                return null;
+            }
+
+            public function recent(int $limit = 20): array
+            {
+                return [];
+            }
+        };
+
+        $this->app->instance(TraceRepository::class, $repository);
+
+        $this->getJson('/duplicate-query')
+            ->assertOk();
+
+        $this->assertSame(1, $repository->saveAttempts);
+        $this->assertNull($repository->latest());
+    }
+
     public function test_it_preserves_framework_mapped_http_statuses_for_model_not_found_responses(): void
     {
         $this->withExceptionHandling()
